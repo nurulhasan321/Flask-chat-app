@@ -1,22 +1,28 @@
-from tkinter.font import names
-
+from flask import Flask,request,render_template
 import mysql.connector
 from mysql.connector import Error
 
+app = Flask(__name__)
+app.secret_key = "replace"
 
-conn = mysql.connector.connect(
-    host="localhost",
-    user="root",
-    password="Nurul@321",
-    database="COMPANY_DB"
-)
+@app.route('/',methods=["GET", "POST"])
+def index():
+    return render_template("index.html")
 
-cur = conn.cursor()
+def mysql_connect():
+    conn = mysql.connector.connect(
+        host="localhost",
+        user="root",
+        password="Nurul@321",
+        database="COMPANY_DB"
+    )
 
-q = "select * from COMPANY_DB.EMPLOYEE"
-cur.execute(q)
-datas = cur.fetchall()
-print(datas)
+    cur = conn.cursor()
+
+    q = "select * from COMPANY_DB.EMPLOYEE"
+    cur.execute(q)
+    datas = cur.fetchall()
+    print(datas)
 
 
 
