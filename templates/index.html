@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Chat Room</title>
+    <script src="https://cdn.socket.io/4.3.2/socket.io.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(to right, #f0f4f8, #d9e2ec);
+            margin: 0;
+            padding: 0;
+        }
+
+        .chat-container {
+            max-width: 700px;
+            margin: 50px auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+            padding: 25px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 10px;
+            color: #333;
+            font-size: 28px;
+        }
+
+        .chat-box {
+            max-height: 450px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            background-color: #fafafa;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            padding: 15px;
+            scroll-behavior: smooth;
+        }
+
+        .chat-message {
+            padding: 10px 15px;
+            margin: 6px 0;
+            max-width: 75%;
+            border-radius: 20px;
+            line-height: 1.4;
+            font-size: 15px;
+            position: relative;
+            word-wrap: break-word;
+        }
+
+        .chat-message.left {
+            background-color: #e2ecf9;
+            align-self: flex-start;
+            color: #2c3e50;
+            border-bottom-left-radius: 0;
+        }
+
+        .chat-message.right {
+            background-color: #c1f2d8;
+            align-self: flex-end;
+            color: #2e7d32;
+            border-bottom-right-radius: 0;
+        }
+
+        form {
+            display: flex;
+            gap: 10px;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 25px;
+            font-size: 15px;
+            transition: all 0.3s;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 5px rgba(0, 123, 255, 0.2);
+        }
+
+        button {
+            padding: 12px 25px;
+            background: linear-gradient(to right, #007bff, #00c6ff);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            font-weight: bold;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background: linear-gradient(to right, #0056b3, #00a0e0);
+        }
+
+        .logout {
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        .logout a {
+            color: #ff4d4f;
+            text-decoration: none;
+            font-weight: bold;
+            transition: color 0.2s;
+        }
+
+        .logout a:hover {
+            text-decoration: underline;
+            color: #d9363e;
+        }
+    </style>
+
+</head>
+<body>
+    <div class="chat-container">
+        <h2>Chat Room</h2>
+        <div class="chat-box" id="chatBox">
+            {% for chat in chats %}
+                <div class="chat-message {% if chat.user == session['username'] %}right{% else %}left{% endif %}">
+                    <strong>{{ chat.user }}:</strong> {{ chat.msg }}
+                </div>
+            {% endfor %}
+        </div>
+
+        <form id="messageForm">
+            <input type="text" id="msgInput" placeholder="Type a message..." required>
+            <button type="submit">Send</button>
+        </form>
+
+        <div class="logout" style="margin-top: 10px; text-align: center;">
+            <a href="{{ url_for('logout') }}" style="color: #dc3545;">Logout</a>
+        </div>
+    </div>
+
+    <script>
+        const socket = io();
+        const username = "{{ session['username'] }}";
+        const chatBox = document.getElementById('chatBox');
+        const msgInput = document.getElementById('msgInput');
+
+        // Auto-scroll
+        window.onload = () => { chatBox.scrollTop = chatBox.scrollHeight; };
+
+        socket.emit('join_room', { room: "global" });
+
+        document.getElementById('messageForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const msg = msgInput.value.trim();
+            if (msg !== "") {
+                socket.emit('send_message', { user: username, message: msg });
+                msgInput.value = "";
+            }
+        });
+
+        socket.on('receive_message', function(data) {
+            const div = document.createElement("div");
+            div.className = "chat-message " + (data.user === username ? "right" : "left");
+            div.innerHTML = `<strong>${data.user}:</strong> ${data.message}`;
+            chatBox.appendChild(div);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        });
+    </script>
+</body>
+</html>
