@@ -2,6 +2,7 @@
 <html>
 <head>
     <title>Chat Room</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- ✅ Mobile Scaling -->
     <script src="https://cdn.socket.io/4.3.2/socket.io.min.js"></script>
     <style>
         body {
@@ -13,25 +14,26 @@
 
         .chat-container {
             max-width: 700px;
-            margin: 50px auto;
+            margin: 30px auto;
             background: white;
             border-radius: 15px;
             box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
-            padding: 25px;
+            padding: 20px;
             display: flex;
             flex-direction: column;
             gap: 15px;
+            height: 90vh;
         }
 
         h2 {
             text-align: center;
             margin-bottom: 10px;
             color: #333;
-            font-size: 28px;
+            font-size: 24px;
         }
 
         .chat-box {
-            max-height: 450px;
+            flex: 1;
             overflow-y: auto;
             display: flex;
             flex-direction: column;
@@ -70,6 +72,7 @@
         form {
             display: flex;
             gap: 10px;
+            flex-shrink: 0;
         }
 
         input[type="text"] {
@@ -88,7 +91,7 @@
         }
 
         button {
-            padding: 12px 25px;
+            padding: 12px 20px;
             background: linear-gradient(to right, #007bff, #00c6ff);
             color: white;
             border: none;
@@ -119,8 +122,36 @@
             text-decoration: underline;
             color: #d9363e;
         }
-    </style>
 
+        /* ✅ Responsive tweaks for mobile */
+        @media (max-width: 600px) {
+            .chat-container {
+                margin: 0;
+                height: 100vh;
+                border-radius: 0;
+                padding: 15px;
+            }
+
+            h2 {
+                font-size: 20px;
+            }
+
+            .chat-message {
+                font-size: 14px;
+                padding: 8px 12px;
+            }
+
+            input[type="text"] {
+                font-size: 14px;
+                padding: 10px;
+            }
+
+            button {
+                font-size: 13px;
+                padding: 10px 16px;
+            }
+        }
+    </style>
 </head>
 <body>
     <div class="chat-container">
@@ -138,8 +169,8 @@
             <button type="submit">Send</button>
         </form>
 
-        <div class="logout" style="margin-top: 10px; text-align: center;">
-            <a href="{{ url_for('logout') }}" style="color: #dc3545;">Logout</a>
+        <div class="logout">
+            <a href="{{ url_for('logout') }}">Logout</a>
         </div>
     </div>
 
@@ -149,8 +180,10 @@
         const chatBox = document.getElementById('chatBox');
         const msgInput = document.getElementById('msgInput');
 
-        // Auto-scroll
-        window.onload = () => { chatBox.scrollTop = chatBox.scrollHeight; };
+        // Auto-scroll to bottom
+        window.onload = () => {
+            chatBox.scrollTop = chatBox.scrollHeight;
+        };
 
         socket.emit('join_room', { room: "global" });
 
