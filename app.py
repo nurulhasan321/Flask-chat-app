@@ -1,6 +1,6 @@
 from flask import Flask, request, render_template, redirect, url_for, session
 from flask_socketio import SocketIO, emit, join_room
-import mysql.connector
+import psycopg2
 from dotenv import load_dotenv
 import os
 
@@ -13,11 +13,12 @@ socketio = SocketIO(app)
 
 # Database connection
 def get_db_connection():
-    return mysql.connector.connect(
+    return psycopg2.connect(
         host=os.getenv("DB_HOST"),
+        dbname=os.getenv("DB_NAME"),
         user=os.getenv("DB_USER"),
         password=os.getenv("DB_PASSWORD"),
-        database=os.getenv("DB_NAME")
+        port=os.getenv("DB_PORT", 5432)
     )
 
 
@@ -86,7 +87,6 @@ def handle_send(data):
     emit('receive_message', {'user': username, 'message': message}, room="global")
 
 if __name__ == '__main__':
-
-    port = int(os.environ.get("PORT", 5000))
+    port = int(os.environ.get("PORT", 5432))
     socketio.run(app, host='0.0.0.0', port=port)
 
