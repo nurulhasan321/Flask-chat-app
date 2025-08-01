@@ -159,7 +159,7 @@
         <div class="chat-box" id="chatBox">
             {% for chat in chats %}
                 <div class="chat-message {% if chat.user == session['username'] %}right{% else %}left{% endif %}">
-                    <strong>{{ chat.user }}:</strong> {{ chat.msg }}
+                     {{ chat.msg }}
                 </div>
             {% endfor %}
         </div>
