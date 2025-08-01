@@ -1,19 +1,25 @@
 from flask import Flask, request, render_template, redirect, url_for, session
 from flask_socketio import SocketIO, emit, join_room
 import mysql.connector
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
 
 app = Flask(__name__)
-app.secret_key = "secret key"
+app.secret_key = os.getenv("developer")
 socketio = SocketIO(app)
 
 # Database connection
 def get_db_connection():
     return mysql.connector.connect(
-        host="localhost",
-        user="root",
-        password="Nurul@321",
-        database="chat_app_db"
+        host=os.getenv("DB_HOST"),
+        user=os.getenv("DB_USER"),
+        password=os.getenv("DB_PASSWORD"),
+        database=os.getenv("DB_NAME")
     )
+
 
 # Check credentials
 def check_in_database(username, password):
