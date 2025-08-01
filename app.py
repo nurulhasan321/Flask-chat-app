@@ -1,46 +1,52 @@
 from flask import Flask, request, render_template, redirect, url_for, session
 from flask_socketio import SocketIO, emit, join_room
 import psycopg2
+import psycopg2.extras
 from dotenv import load_dotenv
 import os
 
 load_dotenv()
-
-host_ip = os.getenv("FLASK_RUN_HOST", "127.0.0.1")
+port = int(os.environ.get("PORT", 5000))
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY")
 socketio = SocketIO(app)
 
-# Database connection
 def get_db_connection():
-    return psycopg2.connect(
-        host=os.getenv("DB_HOST"),
-        dbname=os.getenv("DB_NAME"),
-        user=os.getenv("DB_USER"),
-        password=os.getenv("DB_PASSWORD"),
-        port=os.getenv("DB_PORT", 5432)
-    )
+    try:
+        return psycopg2.connect(
+            host=os.getenv("DB_HOST"),
+            dbname=os.getenv("DB_NAME"),
+            user=os.getenv("DB_USER"),
+            password=os.getenv("DB_PASSWORD"),
+            port=os.getenv("DB_PORT", 5432)
+        )
+    except Exception as e:
+        print("Database connection failed:", e)
+        return None
 
-
-# Check credentials
 def check_in_database(username, password):
     conn = get_db_connection()
-    cur = conn.cursor()
-    cur.execute("SELECT * FROM users WHERE username=%s AND password=%s", (username, password))
-    user = cur.fetchone()
-    cur.close()
-    conn.close()
-    return bool(user)
+    if conn is None:
+        return False
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SELECT * FROM users WHERE username=%s AND password=%s", (username, password))
+            user = cur.fetchone()
+        return bool(user)
+    finally:
+        conn.close()
 
-# Fetch messages
 def fetch_messages():
     conn = get_db_connection()
-    cur = conn.cursor(dictionary=True)
-    cur.execute("SELECT username AS user, msg AS msg FROM messages ORDER BY timestamp ASC")
-    messages = cur.fetchall()
-    cur.close()
-    conn.close()
-    return messages
+    if conn is None:
+        return []
+    try:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute("SELECT username AS user, msg AS msg FROM messages ORDER BY timestamp ASC")
+            messages = cur.fetchall()
+        return messages
+    finally:
+        conn.close()
 
 @app.route('/', methods=["GET", "POST"])
 def login():
@@ -66,27 +72,27 @@ def chat_box():
     chats = fetch_messages()
     return render_template('index.html', chats=chats)
 
-# Socket.IO events
 @socketio.on('join_room')
 def handle_join(data):
-    join_room("global")  # Shared room for all users
+    join_room("global")
 
 @socketio.on('send_message')
 def handle_send(data):
     username = data['user']
     message = data['message']
-
-    # Save message to DB
     conn = get_db_connection()
-    cur = conn.cursor()
-    cur.execute("INSERT INTO messages (username, msg) VALUES (%s, %s)", (username, message))
-    conn.commit()
-    cur.close()
-    conn.close()
-
-    emit('receive_message', {'user': username, 'message': message}, room="global")
+    if conn is None:
+        emit('receive_message', {'user': 'System', 'message': 'DB connection failed, message not saved.'})
+        return
+    try:
+        with conn.cursor() as cur:
+            cur.execute("INSERT INTO messages (username, msg) VALUES (%s, %s)", (username, message))
+            conn.commit()
+    except Exception as e:
+        print("Failed to save message:", e)
+    finally:
+        conn.close()
+    emit('receive_message', {'user': username, 'message': message}, broadcast=True)
 
 if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 5432))
     socketio.run(app, host='0.0.0.0', port=port)
-
