@@ -6,9 +6,9 @@ import os
 
 load_dotenv()
 
-
+host_ip = os.getenv("FLASK_RUN_HOST", "127.0.0.1")
 app = Flask(__name__)
-app.secret_key = os.getenv("developer")
+app.secret_key = os.getenv("SECRET_KEY")
 socketio = SocketIO(app)
 
 # Database connection
@@ -86,4 +86,7 @@ def handle_send(data):
     emit('receive_message', {'user': username, 'message': message}, room="global")
 
 if __name__ == '__main__':
-    socketio.run(app, host='192.168.29.51', port='5000', debug=True)
+
+    port = int(os.environ.get("PORT", 5000))
+    socketio.run(app, host='0.0.0.0', port=port)
+
