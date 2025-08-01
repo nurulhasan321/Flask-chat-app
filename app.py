@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 import os
 
 load_dotenv()
-port = int(os.environ.get("PORT", 5000))
+port = int(os.environ.get("PORT", 5432))
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY")
 socketio = SocketIO(app)
@@ -25,6 +25,9 @@ def get_db_connection():
         return None
 
 def check_in_database(username, password):
+    print(f"Input username: '{username}'")
+    print(f"Input password: '{password}'")
+
     conn = get_db_connection()
     if conn is None:
         return False
@@ -32,9 +35,11 @@ def check_in_database(username, password):
         with conn.cursor() as cur:
             cur.execute("SELECT * FROM users WHERE username=%s AND password=%s", (username, password))
             user = cur.fetchone()
+            print("DB result:", user)
         return bool(user)
     finally:
         conn.close()
+
 
 def fetch_messages():
     conn = get_db_connection()
@@ -95,4 +100,4 @@ def handle_send(data):
     emit('receive_message', {'user': username, 'message': message}, broadcast=True)
 
 if __name__ == '__main__':
-    socketio.run(app, host='0.0.0.0', port=port)
+    socketio.run(app, host='0.0.0.0', port=port,debug=True)
