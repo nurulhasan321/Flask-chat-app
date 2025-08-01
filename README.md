@@ -24,7 +24,7 @@ A real-time group chat application using **Flask**, **Flask-SocketIO**, and **My
 ## 🛠 Tech Stack
 
 - **Backend:** Python, Flask, Flask-SocketIO
-- **Database:** MySQL
+- **Database:** PostgreSQL
 - **Frontend:** HTML, CSS, JavaScript
 - **Sockets:** Socket.IO
 
